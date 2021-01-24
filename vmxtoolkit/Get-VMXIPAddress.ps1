@@ -24,9 +24,13 @@ function Get-VMXIPAddress
                 $Config = $vmx.config
             }
 		}	
-        $ObjectType = "IPAddress"
-		 #$ErrorActionPreference = "silentlyContinue"
-        $IPAddress = .$vmrun getguestipaddress $config
+        
+        try
+        {
+            $IPAddress = .$vmrun getguestipaddress $config
+        }
+        catch {}
+        
         If ($LASTEXITCODE -ne 0)
             {
                 Write-Warning "$LASTEXITCODE , $IPAddress"
@@ -34,10 +38,12 @@ function Get-VMXIPAddress
         Else
             {
                 Write-Verbose -Message "getting $ObjectType"
+                
                 $Object = New-Object -TypeName psobject
-                $Object | Add-Member -MemberType NoteProperty -Name VMXName -Value $VMXName
-                $Object | Add-Member -MemberType NoteProperty -Name $ObjectType -Value $IPAddress
+                $Object | Add-Member -MemberType NoteProperty -Name "VMXName" -Value $VMXName
+                $Object | Add-Member -MemberType NoteProperty -Name "IPAddress" -Value $IPAddress
                 Write-Output $Object
+                
             }
 	}
     

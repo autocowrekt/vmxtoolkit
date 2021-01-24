@@ -1,18 +1,21 @@
 <#	
 	.SYNOPSIS
-		A brief description of the get-VMX function.
+		Get a list on all or specific VMS.
 	
 	.DESCRIPTION
-		A detailed description of the get-VMX function.
-	
-	.PARAMETER Name
-		Please specify an optional VM Name
+		Get a list on all or specific VMS.
 	
 	.PARAMETER Path
-		Please enter an optional root Path to you VMs (default is vmxdir)
+		Optional. The path to the VM 
+	
+	.PARAMETER VMXName
+		Optional. Path to the VM .vmx file
 	
 	.EXAMPLE
-		PS C:\> Get-VMX -VMXName $value1 -Path $value2
+		PS C:\> Get-VMX -VMXName C:\Path\To\VMFolder\vm.vmx -Path C:\Path\To\VMFolder\
+
+	.EXAMPLE
+		PS C:\> Get-VMX -Path
 	
 	.NOTES
 		Additional information about the function.
@@ -109,59 +112,59 @@ function Get-VMX
 					    {
 						    $Object | Add-Member State ("suspended")
 					    }
+						else
+						{
+							$Object | Add-Member State ("stopped")
+						}
+						
+						$Object | Add-Member -MemberType NoteProperty -Name Template -Value (Get-VMXTemplate -config $Config).template
+						$Object | Add-Member -MemberType NoteProperty -Name ActivationPreference -Value (Get-VMXActivationPreference -config $Config -VMXName $Config.BaseName).ActivationPreference
+						$Object | Add-Member -MemberType NoteProperty -Name Scenario -Value (Get-VMXscenario -config $Config -VMXName $Config.BaseName) #.Scenario
+						$Object | Add-Member -MemberType NoteProperty -Name UUID -Value (Get-VMXUUID -config $Config.FullName).uuid
+						$Object | Add-Member -MemberType NoteProperty -Name Config -Value ([string]($Config.FullName))
+						$Object | Add-Member -MemberType NoteProperty -Name Path -Value ([string]($Config.Directory))
+						$Object | Add-Member -MemberType NoteProperty -Name VMXSnapConfig -Value ([string](Get-ChildItem -Path $Config.Directory -Filter "*.vmsd").Fullname)
+						Write-Verbose "Config Fullname $($Config.Fullname)"
+						Write-Output $Object
+                    
+                    }# end If ($VMXUUID.uuid -eq $UUID) 
+				
+				}#end if ($UUID)
+            
+				if (!($UUID))
+				{				
+					$Object = New-Object -TypeName psobject
+					$Object.pstypenames.insert(0,'virtualmachine')
+					$Object | Add-Member -MemberType NoteProperty -Name VMXName -Value ([string]($Config.BaseName))
+					
+					if ($vmxrun -contains $config.fullname)
+					{
+						$Object | Add-Member State ("running")
+					}
+					elseif (Get-ChildItem -Filter *.vmss -Path ($config.DirectoryName))
+					{
+						$Object | Add-Member State ("suspended")
+					}
 					else
 					{
 						$Object | Add-Member State ("stopped")
 					}
-                    
-                    $Object | Add-Member -MemberType NoteProperty -Name Template -Value (Get-VMXTemplate -config $Config).template
-                    $Object | Add-Member -MemberType NoteProperty -Name ActivationPreference -Value (Get-VMXActivationPreference -config $Config -VMXName $Config.BaseName).ActivationPreference
-					$Object | Add-Member -MemberType NoteProperty -Name Scenario -Value (Get-VMXscenario -config $Config -VMXName $Config.BaseName) #.Scenario
+					
+					$Object | Add-Member -MemberType NoteProperty -Name Template -Value (Get-VMXTemplate -Config $Config).template
+					$Object | Add-Member -MemberType NoteProperty -Name ActivationPreference -Value (Get-VMXActivationPreference -config $Config -VMXName $Config.BaseName).ActivationPreference
+					$Object | Add-Member -MemberType NoteProperty -Name Scenario -Value (Get-VMXscenario -config $Config -VMXName $Config.BaseName | Select-Object scenario, scenarioname)# .Scenario
 					$Object | Add-Member -MemberType NoteProperty -Name UUID -Value (Get-VMXUUID -config $Config.FullName).uuid
 					$Object | Add-Member -MemberType NoteProperty -Name Config -Value ([string]($Config.FullName))
 					$Object | Add-Member -MemberType NoteProperty -Name Path -Value ([string]($Config.Directory))
-                    $Object | Add-Member -MemberType NoteProperty -Name VMXSnapConfig -Value ([string](Get-ChildItem -Path $Config.Directory -Filter "*.vmsd").Fullname)
-                    Write-Verbose "Config Fullname $($Config.Fullname)"
+					$Object | Add-Member -MemberType NoteProperty -Name VMXSnapConfig -Value ([string](Get-ChildItem -Path $Config.Directory -Filter "*.vmsd").Fullname)
 					Write-Output $Object
-                    
-                    }# end if
+				} # End if (!($UUID))
 				
-			}#end-if uuid
-            
-            if (!($UUID))
-			{				
-				$Object = New-Object -TypeName psobject
-				$Object.pstypenames.insert(0,'virtualmachine')
-                $Object | Add-Member -MemberType NoteProperty -Name VMXName -Value ([string]($Config.BaseName))
-                
-				if ($vmxrun -contains $config.fullname)
-				{
-					$Object | Add-Member State ("running")
-				}
-				elseif (Get-ChildItem -Filter *.vmss -Path ($config.DirectoryName))
-				{
-					$Object | Add-Member State ("suspended")
-				}
-				else
-				{
-					$Object | Add-Member State ("stopped")
-				}
-                
-                $Object | Add-Member -MemberType NoteProperty -Name Template -Value (Get-VMXTemplate -Config $Config).template
-                $Object | Add-Member -MemberType NoteProperty -Name ActivationPreference -Value (Get-VMXActivationPreference -config $Config -VMXName $Config.BaseName).ActivationPreference
-                $Object | Add-Member -MemberType NoteProperty -Name Scenario -Value (Get-VMXscenario -config $Config -VMXName $Config.BaseName | Select-Object scenario, scenarioname)# .Scenario
-				$Object | Add-Member -MemberType NoteProperty -Name UUID -Value (Get-VMXUUID -config $Config.FullName).uuid
-			    $Object | Add-Member -MemberType NoteProperty -Name Config -Value ([string]($Config.FullName))
-				$Object | Add-Member -MemberType NoteProperty -Name Path -Value ([string]($Config.Directory))
-                $Object | Add-Member -MemberType NoteProperty -Name VMXSnapConfig -Value ([string](Get-ChildItem -Path $Config.Directory -Filter "*.vmsd").Fullname)
-				Write-Output $Object
-			}
-			#}#end template
-		}#end if   
-		     
+			}# End if ($Config.Extension -eq ".vmx") 
+				
+		}# End Foreach
 	}
+	
+	end {}
 
-    end {}
-
-    } # end get-vmx
-}
+} # end get-vmx

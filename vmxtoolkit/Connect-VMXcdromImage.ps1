@@ -24,7 +24,7 @@ function Connect-VMXcdromImage
             {
                 Write-Warning "Controller $($Contoller)$($Port) not present"
             }
-        else
+            else
             {
                 Write-Host -ForegroundColor Gray -NoNewline " ==> Configuring IDE $($Contoller)$($Port) on "
                 Write-Host -ForegroundColor Magenta -NoNewline $VMXName
@@ -35,24 +35,25 @@ function Connect-VMXcdromImage
                 $Content = $Content -notmatch "$($Contoller)$($Port)"
                 $Content += "$($Contoller)$($Port)"+'.present = "TRUE"'
                 $Content += "$($Contoller)$($Port)"+'.autodetect = "TRUE"'
-            If ($connect.IsPresent -and $ISOfile)
-            {
-                $Content += "$($Contoller)$($Port)"+'.deviceType = "cdrom-image"'
-                $Content += "$($Contoller)$($Port)"+'.startConnected = "TRUE"'
-                $Content += "$($Contoller)$($Port)"+'.fileName = "'+$ISOfile+'"'
-                $Object | Add-Member -MemberType NoteProperty -Name ISO -Value $ISOfile
                 
-            }
-            else
-            {
-                $Content += "$($Contoller)$($Port)"+'.deviceType = "cdrom-raw"'
-                $Content += "$($Contoller)$($Port)"+'.startConnected = "FALSE"'
-            }
-            
-                $Content | Set-Content -Path $config
-                Write-Host -ForegroundColor Green "[success]"
-                $Object | Add-Member -MemberType 'NoteProperty' -Name Connected -Value $connect
-                Write-Output $Object
+                If ($connect.IsPresent -and $ISOfile)
+                {
+                    $Content += "$($Contoller)$($Port)"+'.deviceType = "cdrom-image"'
+                    $Content += "$($Contoller)$($Port)"+'.startConnected = "TRUE"'
+                    $Content += "$($Contoller)$($Port)"+'.fileName = "'+$ISOfile+'"'
+                    $Object | Add-Member -MemberType NoteProperty -Name ISO -Value $ISOfile
+                    
+                }
+                else
+                {
+                    $Content += "$($Contoller)$($Port)"+'.deviceType = "cdrom-raw"'
+                    $Content += "$($Contoller)$($Port)"+'.startConnected = "FALSE"'
+                }
+                
+                    $Content | Set-Content -Path $config
+                    Write-Host -ForegroundColor Green "[success]"
+                    $Object | Add-Member -MemberType 'NoteProperty' -Name Connected -Value $connect
+                    Write-Output $Object
             
             }
         }
@@ -63,6 +64,5 @@ function Connect-VMXcdromImage
 	}
 
     End {}
-	{
-
+	
 }

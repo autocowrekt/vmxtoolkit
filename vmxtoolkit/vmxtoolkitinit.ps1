@@ -7,10 +7,10 @@ param
 
 if ($PSVersionTable.PSVersion -lt [version]"6.0.0") 
 {
-    Write-Verbose "this will check if we are on 6"
+    Write-Verbose "[+] this will check if we are on 6"
 }
 
-write-Host "trying to get os type ... "
+Write-Verbose "[+] Trying to get os type ... "
 
 if ($env:windir) 
 {
@@ -26,7 +26,7 @@ if ($env:windir)
     
     if (!($VMware_Path = Get-ItemProperty HKCR:\Applications\vmware.exe\shell\open\command -ErrorAction SilentlyContinue)) 
     {
-        Write-Error "VMware Binaries not found from registry"
+        Write-Error "[*] VMware Binaries not found from registry"
         Break
     }
 
@@ -48,7 +48,7 @@ if ($env:windir)
 }
 elseif ($OS = uname) 
 {
-    Write-Host "found OS $OS"
+    Write-Verbose "[+] Found OS $OS"
     Switch ($OS) 
     {
         "Darwin" 
@@ -70,7 +70,7 @@ elseif ($OS = uname)
             }
             catch 
             {
-                Write-Warning "curl not found"
+                Write-Warning "[!] Curl not found"
                 exit
             }
             try 
@@ -79,7 +79,7 @@ elseif ($OS = uname)
             }
             catch 
             {
-                Write-Warning "7za not found, pleas install p7zip full"
+                Write-Warning "[!] 7za not found, pleas install p7zip full"
                 Break
             }
 
@@ -116,7 +116,7 @@ elseif ($OS = uname)
             }
             catch 
             {
-                Write-Warning "curl not found"
+                Write-Warning "[!] curl not found"
                 exit
             }
             
@@ -126,7 +126,7 @@ elseif ($OS = uname)
             }
             catch 
             {
-                Write-Warning "VMware Path not found"
+                Write-Warning "[!] VMware Path not found"
                 exit
             }
 
@@ -139,7 +139,7 @@ elseif ($OS = uname)
             }
             catch 
             {
-                Write-Warning "vmware-vdiskmanager not found"
+                Write-Warning "[!] vmware-vdiskmanager not found"
                 break
             }
             
@@ -149,7 +149,7 @@ elseif ($OS = uname)
             }
             catch 
             {
-                Write-Warning "7za not found, pleas install p7zip full"
+                Write-Warning "[!] 7za not found, pleas install p7zip full"
             }
 				
             try 
@@ -158,7 +158,7 @@ elseif ($OS = uname)
             }	
             catch 
             {
-                Write-Warning "vmrun not found"
+                Write-Warning "[!] vmrun not found"
                 break
             }
             
@@ -168,7 +168,7 @@ elseif ($OS = uname)
             }
             catch 
             {
-                Write-Warning "ovftool not found"
+                Write-Warning "[!] ovftool not found"
                 break
             }
             
@@ -178,7 +178,7 @@ elseif ($OS = uname)
             }
             catch 
             {
-                Write-Warning "mkisofs not found"
+                Write-Warning "[!] mkisofs not found"
                 break
             }
             
@@ -189,26 +189,26 @@ elseif ($OS = uname)
         }
         default 
         {
-            Write-host "Sorry, rome was not build in one day"
+            Write-Verbose "[+] Sorry, rome was not build in one day"
             exit
         }
 					
         'default' 
         {
-            write-host "unknown linux OS"
+            Write-Verbose "[+] unknown linux OS"
             break
         }
     }
 }
 else 
 {
-    write-host "error detecting OS"
+    Write-Verbose "[+] error detecting OS"
 }
 
 if (Test-Path $preferences_file) 
 {
-    Write-Verbose "Found VMware Preferences file"
-    Write-Verbose "trying to get vmx path from preferences"
+    Write-Verbose "[+] Found VMware Preferences file"
+    Write-Verbose "[+] Trying to get vmx path from preferences"
     $defaultVMPath = get-content $preferences_file | Select-String prefvmx.defaultVMPath
     
     if ($defaultVMPath) 
@@ -216,13 +216,13 @@ if (Test-Path $preferences_file)
         $defaultVMPath = $defaultVMPath -replace "`""
         $defaultVMPath = ($defaultVMPath -split "=")[-1]
         $defaultVMPath = $defaultVMPath.TrimStart(" ")
-        Write-Verbose "default vmpath from preferences is $defaultVMPath"
+        Write-Verbose "[+] Default vmpath from preferences is $defaultVMPath"
         $VMX_default_Path = $defaultVMPath
         $defaultselection = "preferences"
     }
     else 
     {
-        Write-Verbose "no defaultVMPath in prefernces"
+        Write-Verbose "[+] No defaultVMPath in prefernces"
     }
 }
 
@@ -230,7 +230,7 @@ if (!$VMX_Path)
 {
     if (!$VMX_default_Path) 
     {
-        Write-Verbose "trying to use default vmxdir in homedirectory" 
+        Write-Verbose "[+] trying to use default vmxdir in homedirectory" 
         try 
         {
             $defaultselection = "homedir"
@@ -238,10 +238,10 @@ if (!$VMX_Path)
         }
         catch 
         {
-            Write-Warning "could not evaluate default Virtula machines home, using $PSScriptRoot"
+            Write-Warning "[!] could not evaluate default Virtula machines home, using $PSScriptRoot"
             $Global:vmxdir = $PSScriptRoot
             $defaultselection = "ScriptRoot"
-            Write-Verbose "using psscriptroot as vmxdir"
+            Write-Verbose "[+] Using psscriptroot as vmxdir"
         }
     }
     else 
@@ -279,35 +279,77 @@ $Global:VMrunErrorCondition = @(
 
 if (!$GLobal:VMware_packer) 
 {
-    Write-Warning "Please install 7za/p7zip, otherwise labbtools can not expand OS Masters"
+    Write-Warning "[!] Please install 7za/p7zip, otherwise labbtools can not expand OS Masters"
 }
 
 if ($OS_Version) 
 {
-    write-Host -ForegroundColor Gray " ==>$OS_Version"
+    Write-Verbose  "[*] $OS_Version"
 }
 else	
 {
-    write-host "error Detecting OS"
+    Write-Verbose "[+] error Detecting OS"
     Break
 }
 
-Write-Host -ForegroundColor Gray " ==>running vmxtoolkit for $Global:vmxtoolkit_type"
-Write-Host -ForegroundColor Gray " ==>vmrun is $Global:vmrun"
-Write-Host -ForegroundColor Gray " ==>vmwarepath is $Global:vmwarepath"
+Write-Verbose "[*] running vmxtoolkit for $Global:vmxtoolkit_type"
+Write-Verbose "[*] vmrun is $Global:vmrun"
+Write-Verbose "[*] vmwarepath is $Global:vmwarepath"
 
 if ($VMX_Path) 
 {
-    Write-Host -ForegroundColor Gray " ==>using virtual machine directory from module load $Global:vmxdir"
+    Write-Verbose "[*] Using virtual machine directory from module load $Global:vmxdir"
 }
 else
 {
-Write-Host -ForegroundColor Gray " ==>using virtual machine directory from $defaultselection`: $Global:vmxdir"
+Write-Verbose  "[*] Using virtual machine directory from $defaultselection`: $Global:vmxdir"
 }	
 
-Write-Host -ForegroundColor Gray " ==>running VMware Version Mode $Global:vmwareversion"
-Write-Host -ForegroundColor Gray " ==>OVFtool is $Global:VMware_OVFTool"
-Write-Host -ForegroundColor Gray " ==>Packertool is $GLobal:VMware_packer"
-Write-Host -ForegroundColor Gray " ==>vdisk manager is $Global:vmware_vdiskmanager"
-Write-Host -ForegroundColor Gray " ==>webrequest tool is $webrequestor"
-Write-Host -ForegroundColor Gray " ==>isotool is $Global:mkisofs"
+Write-Verbose  "[*] Running VMware Version Mode $Global:vmwareversion"
+Write-Verbose  "[*] OVFtool is $Global:VMware_OVFTool"
+Write-Verbose  "[*] Packertool is $GLobal:VMware_packer"
+Write-Verbose  "[*] vDisk manager is $Global:vmware_vdiskmanager"
+Write-Verbose  "[*] Webrequest tool is $webrequestor"
+Write-Verbose  "[*] isotool is $Global:mkisofs"
+Write-Verbose  "[*] Importing helper functions..."
+
+function Get-yesno
+{
+    [CmdletBinding(DefaultParameterSetName='Parameter Set 1', 
+                  PositionalBinding=$false,
+                  HelpUri = 'http://labbuildr.com/',
+                  ConfirmImpact='Medium')]
+    Param
+    (
+$title = "Delete Files",
+$message = "Do you want to delete the remaining files in the folder?",
+$Yestext = "Yestext",
+$Notext = "notext"
+    )
+$yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes","$Yestext"
+$no = New-Object System.Management.Automation.Host.ChoiceDescription "&No","$Notext"
+$options = [System.Management.Automation.Host.ChoiceDescription[]]($no, $yes)
+$result = $host.ui.PromptForChoice($title, $message, $options, 0)
+return ($result)
+}
+function Get-yesnoabort
+{
+    [CmdletBinding(DefaultParameterSetName='Parameter Set 1', 
+                  PositionalBinding=$false,
+                  HelpUri = 'http://labbuildr.com/',
+                  ConfirmImpact='Medium')]
+Param
+    (
+    $title = "Delete Files",
+    $message = "Do you want to delete the remaining files in the folder?",
+    $Yestext = "Yes",
+    $Notext = "No",
+    $AbortText = "Abort"
+    )
+$yes = New-Object System.Management.Automation.Host.ChoiceDescription ("&Yes","$Yestext")
+$no = New-Object System.Management.Automation.Host.ChoiceDescription "&No","$Notext"
+$abort = New-Object System.Management.Automation.Host.ChoiceDescription "&Abort","$Aborttext"
+$options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no, $Abort )
+$result = $host.ui.PromptForChoice($title, $message, $options, 0)
+return ($result)
+}

@@ -45,7 +45,12 @@ function New-VMXLinkedClone
 	Process
 	{
 		#foreach ($config in $getconfig)
-		if (!$Clonepath) { $Clonepath = $global:vmxdir } #Split-Path -Path $Path -Parent }
+		if (!$Clonepath) 
+		{
+			$Clonepath = $global:vmxdir 
+		} #Split-Path -Path $Path -Parent 
+		
+		
 		Write-Verbose "clonepath is $ClonePath"
 		$cmdresult = ""
 		$Targetpath = Join-Path $Clonepath $CloneName 
