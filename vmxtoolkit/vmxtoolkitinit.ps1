@@ -1,21 +1,31 @@
 ﻿[CmdletBinding()]
 param
 (
-    $VMX_Path)
+    $VMX_Path
+)
+    # Some Globals
 
-################## Some Globals
-if ($PSVersionTable.PSVersion -lt [version]"6.0.0") {
+if ($PSVersionTable.PSVersion -lt [version]"6.0.0") 
+{
     Write-Verbose "this will check if we are on 6"
 }
 
 write-Host "trying to get os type ... "
-if ($env:windir) {
+
+if ($env:windir) 
+{
     $OS_Version = Get-Command "$env:windir\system32\ntdll.dll"
     $OS_Version = "Product Name: Windows $($OS_Version.Version)"
     $Global:vmxtoolkit_type = "win_x86_64"
     write-verbose "getting VMware Path from Registry"
-    if (!(Test-Path "HKCR:\")) { $NewPSDrive = New-PSDrive -Name HKCR -PSProvider Registry -Root HKEY_CLASSES_ROOT }
-    if (!($VMware_Path = Get-ItemProperty HKCR:\Applications\vmware.exe\shell\open\command -ErrorAction SilentlyContinue)) {
+
+    if (!(Test-Path "HKCR:\")) 
+    {
+        $NewPSDrive = New-PSDrive -Name HKCR -PSProvider Registry -Root HKEY_CLASSES_ROOT 
+    }
+    
+    if (!($VMware_Path = Get-ItemProperty HKCR:\Applications\vmware.exe\shell\open\command -ErrorAction SilentlyContinue)) 
+    {
         Write-Error "VMware Binaries not found from registry"
         Break
     }
@@ -36,10 +46,13 @@ if ($env:windir) {
     $webrequestor = ".Net"
     $Global:mkisofs = "$Global:vmwarepath/mkisofs.exe"
 }
-elseif ($OS = uname) {
+elseif ($OS = uname) 
+{
     Write-Host "found OS $OS"
-    Switch ($OS) {
-        "Darwin" {
+    Switch ($OS) 
+    {
+        "Darwin" 
+        {
             $Global:vmxtoolkit_type = "OSX"
             $OS_Version = (sw_vers)
             $OS_Version = $OS_Version -join " "
@@ -50,161 +63,201 @@ elseif ($OS = uname) {
             [version]$Fusion_Version = defaults read $VMware_Path/Contents/Info.plist CFBundleShortVersionString
             $VMware_BIN_Path = Join-Path $VMware_Path  '/Contents/Library'
             $preferences_file = "$HOME/Library/Preferences/VMware Fusion/preferences"
-            try {
+        
+            try 
+            {
                 $webrequestor = (get-command curl).Path
             }
-            catch {
+            catch 
+            {
                 Write-Warning "curl not found"
                 exit
             }
-            try {
+            try 
+            {
                 $GLobal:VMware_packer = (get-command 7za -ErrorAction Stop).Path 
             }
-            catch {
+            catch 
+            {
                 Write-Warning "7za not found, pleas install p7zip full"
                 Break
             }
 
             $Global:VMware_vdiskmanager = Join-Path $VMware_BIN_Path 'vmware-vdiskmanager'
             $Global:vmrun = Join-Path $VMware_BIN_Path "vmrun"
-            switch ($Fusion_Version.Major) {
-                "10" {
+            
+            switch ($Fusion_Version.Major) 
+            {
+                "10" 
+                {
                     $Global:VMware_OVFTool = "/Applications/VMware Fusion.app/Contents/Library/VMware OVF Tool/ovftool"
                     [version]$Global:vmwareversion = "14.0.0.0"
                 }
 					
-                default {
+                default 
+                {
                     $Global:VMware_OVFTool = Join-Path $VMware_Path 'ovftool'
                     [version]$Global:vmwareversion = "12.0.0.0"
                 }
             }
 
         }
-        'Linux' {
+        'Linux' 
+        {
             $Global:vmxtoolkit_type = "LINUX"
             $OS_Version = (uname -o)
             #$OS_Version = $OS_Version -join " "
             $preferences_file = "$HOME/.vmware/preferences"
             $VMX_BasePath = '/var/lib/vmware/Shared VMs'
-            try {
+            
+            try 
+            {
                 $webrequestor = (get-command curl).Path
             }
-            catch {
+            catch 
+            {
                 Write-Warning "curl not found"
                 exit
             }
-            try {
+            
+            try 
+            {
                 $VMware_Path = Split-Path -Parent (get-command vmware).Path
             }
-            catch {
+            catch 
+            {
                 Write-Warning "VMware Path not found"
                 exit
             }
 
             $Global:vmwarepath = $VMware_Path
             $VMware_BIN_Path = $VMware_Path  
-            try {
+            
+            try
+            {
                 $Global:VMware_vdiskmanager = (get-command vmware-vdiskmanager).Path
             }
-            catch {
+            catch 
+            {
                 Write-Warning "vmware-vdiskmanager not found"
                 break
             }
-            try {
+            
+            try 
+            {
                 $GLobal:VMware_packer = (get-command 7za).Path
             }
-            catch {
+            catch 
+            {
                 Write-Warning "7za not found, pleas install p7zip full"
             }
 				
-            try {
+            try 
+            {
                 $Global:vmrun = (Get-Command vmrun).Path
             }	
-            catch {
+            catch 
+            {
                 Write-Warning "vmrun not found"
                 break
             }
-            try {
+            
+            try
+            {
                 $Global:VMware_OVFTool = (Get-Command ovftool).Path
             }
-            catch {
+            catch 
+            {
                 Write-Warning "ovftool not found"
                 break
             }
-            try {
+            
+            try
+            {
                 $Global:mkisofs = (Get-Command mkisofs).Path
             }
-            catch {
+            catch 
+            {
                 Write-Warning "mkisofs not found"
                 break
             }
+            
             $Vmware_Base_Version = (vmware -v)
             $Vmware_Base_Version = $Vmware_Base_Version -replace "VMware Workstation "
+            
             [version]$Global:vmwareversion = ($Vmware_Base_Version.Split(' '))[0]
         }
-        default {
+        default 
+        {
             Write-host "Sorry, rome was not build in one day"
             exit
         }
-			
-			
-			
-        'default' {
+					
+        'default' 
+        {
             write-host "unknown linux OS"
             break
         }
     }
 }
-else {
+else 
+{
     write-host "error detecting OS"
 }
 
-if (Test-Path $preferences_file) {
-        Write-Verbose "Found VMware Preferences file"
-        Write-Verbose "trying to get vmx path from preferences"
-        $defaultVMPath = get-content $preferences_file | Select-String prefvmx.defaultVMPath
-        if ($defaultVMPath) {
-            $defaultVMPath = $defaultVMPath -replace "`""
-            $defaultVMPath = ($defaultVMPath -split "=")[-1]
-            $defaultVMPath = $defaultVMPath.TrimStart(" ")
-            Write-Verbose "default vmpath from preferences is $defaultVMPath"
-            $VMX_default_Path = $defaultVMPath
-            $defaultselection = "preferences"
-        }
-        else {
-            Write-Verbose "no defaultVMPath in prefernces"
-        }
+if (Test-Path $preferences_file) 
+{
+    Write-Verbose "Found VMware Preferences file"
+    Write-Verbose "trying to get vmx path from preferences"
+    $defaultVMPath = get-content $preferences_file | Select-String prefvmx.defaultVMPath
+    
+    if ($defaultVMPath) 
+    {
+        $defaultVMPath = $defaultVMPath -replace "`""
+        $defaultVMPath = ($defaultVMPath -split "=")[-1]
+        $defaultVMPath = $defaultVMPath.TrimStart(" ")
+        Write-Verbose "default vmpath from preferences is $defaultVMPath"
+        $VMX_default_Path = $defaultVMPath
+        $defaultselection = "preferences"
     }
+    else 
+    {
+        Write-Verbose "no defaultVMPath in prefernces"
+    }
+}
 
-
-
-
-if (!$VMX_Path) {
-    if (!$VMX_default_Path) {
+if (!$VMX_Path) 
+{
+    if (!$VMX_default_Path) 
+    {
         Write-Verbose "trying to use default vmxdir in homedirectory" 
-        try {
+        try 
+        {
             $defaultselection = "homedir"
             $Global:vmxdir = Join-Path $HOME $VMX_BasePath
         }
-        catch {
+        catch 
+        {
             Write-Warning "could not evaluate default Virtula machines home, using $PSScriptRoot"
             $Global:vmxdir = $PSScriptRoot
             $defaultselection = "ScriptRoot"
             Write-Verbose "using psscriptroot as vmxdir"
         }
-		
     }
-    else {
-        if (Test-Path $VMX_default_Path) {
+    else 
+    {
+        if (Test-Path $VMX_default_Path) 
+        {
             $Global:vmxdir = $VMX_default_Path	
         }
-        else {
+        else 
+        {
             $Global:vmxdir = $PSScriptRoot
         }
-		
     }
 }
-else {
+else 
+{
     $Global:vmxdir = $VMX_Path
 }
 
@@ -221,26 +274,37 @@ $Global:VMrunErrorCondition = @(
     "Error: The specified guest user must be logged in interactively to perform this operation",
     "Error: A file was not found",
     "Error: VMware Tools are not running in the guest",
-    "Error: The VMware Tools are not running in the virtual machine" )
-if (!$GLobal:VMware_packer) {
+    "Error: The VMware Tools are not running in the virtual machine" 
+    )
+
+if (!$GLobal:VMware_packer) 
+{
     Write-Warning "Please install 7za/p7zip, otherwise labbtools can not expand OS Masters"
 }
-if ($OS_Version) {
+
+if ($OS_Version) 
+{
     write-Host -ForegroundColor Gray " ==>$OS_Version"
 }
-else	{
+else	
+{
     write-host "error Detecting OS"
     Break
 }
+
 Write-Host -ForegroundColor Gray " ==>running vmxtoolkit for $Global:vmxtoolkit_type"
 Write-Host -ForegroundColor Gray " ==>vmrun is $Global:vmrun"
 Write-Host -ForegroundColor Gray " ==>vmwarepath is $Global:vmwarepath"
-if ($VMX_Path) {
+
+if ($VMX_Path) 
+{
     Write-Host -ForegroundColor Gray " ==>using virtual machine directory from module load $Global:vmxdir"
 }
-else {
-    Write-Host -ForegroundColor Gray " ==>using virtual machine directory from $defaultselection`: $Global:vmxdir"
+else
+{
+Write-Host -ForegroundColor Gray " ==>using virtual machine directory from $defaultselection`: $Global:vmxdir"
 }	
+
 Write-Host -ForegroundColor Gray " ==>running VMware Version Mode $Global:vmwareversion"
 Write-Host -ForegroundColor Gray " ==>OVFtool is $Global:VMware_OVFTool"
 Write-Host -ForegroundColor Gray " ==>Packertool is $GLobal:VMware_packer"
