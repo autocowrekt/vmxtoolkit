@@ -71,7 +71,7 @@ function Start-VMX
 		    {
                 [int]$vmxhwversion = (Get-VMXHWVersion -config $vmx.config).hwversion
             
-                if ($vmxHWversion -le $vmwareversion.major)
+                if ($vmxHWversion -le "18")
                 {
                     Write-Verbose "Checking State for $vmxname : $($vmx.vmxname)  : $($vmx.state)"
                     Write-Verbose "creating Backup of $($vmx.config)"

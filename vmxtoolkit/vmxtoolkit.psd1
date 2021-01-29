@@ -95,6 +95,7 @@
         'Get-VMXideDisk',
         'Get-VMXInfo',
         'Get-VMXIPAddress',
+        'Get-VMwareLANSegment',
         'Get-VMXmemory',
         'Get-VMXNetwork',
         'Get-VMXNetworkAdapter',

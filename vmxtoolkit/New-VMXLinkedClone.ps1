@@ -50,16 +50,18 @@ function New-VMXLinkedClone
 			$Clonepath = $global:vmxdir 
 		} #Split-Path -Path $Path -Parent 
 		
-		
 		Write-Verbose "clonepath is $ClonePath"
-		$cmdresult = ""
+		
 		$Targetpath = Join-Path $Clonepath $CloneName 
 		$CloneConfig = Join-path "$Targetpath" "$CloneName.vmx"
 		$TemplateVM = Split-Path -Leaf $config
-		$Templatevm = $TemplateVM -replace ".vmx",""
+		$TemplateVM = $TemplateVM -replace ".vmx",""
+		
 		Write-Verbose "creating Linked Clone $Clonename from $TemplateVM $Basesnapshot in $Cloneconfig"
 		Write-Host -ForegroundColor Gray " ==>creating Linked Clone from $TemplateVM $Basesnapshot for " -NoNewline
 		Write-Host -ForegroundColor Magenta $Clonename -NoNewline
+
+		$cmdresult = ""
 		do
         {
 			$snapcommand = "clone `"$config`" `"$Cloneconfig`" linked -snapshot=$($BaseSnapshot) -cloneName=$($Clonename)" # 2>&1 | Out-Null

@@ -25,7 +25,8 @@ function Set-VMXNetworkAdapter
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $True)][Alias('NAME','CloneName')][string]$VMXName,
 		[Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]$config,
 		[Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)][ValidateRange(0,9)][int]$Adapter,
-		[Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)][ValidateSet('nat', 'bridged','custom','hostonly')]$ConnectionType,
+        [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)][ValidateSet('nat', 'bridged','custom','hostonly','pvn')]$ConnectionType,
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]$segment,
 		[Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)][ValidateSet('e1000e','vmxnet3','e1000')]$AdapterType,
 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)][int]$PCISlot
 	)
@@ -43,25 +44,50 @@ function Set-VMXNetworkAdapter
         
             $Content = Get-Content -Path $config
             Write-verbose "ethernet$Adapter.present"
-            if (!($Content -match "ethernet$Adapter.present")) { Write-Warning "Adapter not present, will be added" }
-            Write-Host -ForegroundColor Gray " ==>configuring Ethernet$Adapter as $AdapterType with $ConnectionType for " -NoNewline
-            write-host -ForegroundColor Magenta $VMXName -NoNewline
-            Write-Host -ForegroundColor Green "[success]"
+            
+            if (!($Content -match "ethernet$Adapter.present")) 
+            {
+                Write-Warning "Adapter not present, will be added" 
+            }
+            
+            # Get a list of lan segments
+            $Segments = Get-VMwareLANSegment
+
+            # Get contents of vmx file without adapter information 
             $Content = $Content -notmatch "ethernet$Adapter"
+            
             $Addnic = @('ethernet'+$Adapter+'.present = "TRUE"')
             $Addnic += @('ethernet'+$Adapter+'.connectionType = "'+$ConnectionType+'"')
             $Addnic += @('ethernet'+$Adapter+'.wakeOnPcktRcv = "FALSE"')
             $Addnic += @('ethernet'+$Adapter+'.pciSlotNumber = "'+$PCISlot+'"')
             $Addnic += @('ethernet'+$Adapter+'.virtualDev = "'+$AdapterType+'"')
+            $Addnic += @('ethernet'+$Adapter+'.addressType = "generated"')
+            
+            # extra step required if using LAN Segments
+            if ($ConnectionType -eq 'pvn' -and ($segment))
+            {
+                $Segment = $Segments -match $Segment
+                $Addnic += @('ethernet'+$Adapter+'.pvnID = "'+$Segment.id+'"')
+            }else{
+                Write-Warning "Segment name must be specified"
+                break
+            }
+
+            # Update vmx file
             $Content += $Addnic
             $Content | Set-Content -Path $config
+
+            Write-Host -ForegroundColor Gray " ==>configuring Ethernet$Adapter as $AdapterType with $ConnectionType for " -NoNewline
+            write-host -ForegroundColor Magenta $VMXName -NoNewline
+            Write-Host -ForegroundColor Green "[success]"
+
+            # Write output to host
             $Object = New-Object -TypeName psobject
             $Object | Add-Member -MemberType NoteProperty -Name VMXName -Value $VMXName
             $Object | Add-Member -MemberType NoteProperty -Name Adapter -Value "Ethernet$Adapter"
             $Object | Add-Member -MemberType NoteProperty -Name AdapterType -Value $AdapterType
             $Object | Add-Member -MemberType NoteProperty -Name ConnectionType -Value $ConnectionType
             $Object | Add-Member -MemberType NoteProperty -Name Config -Value $Config
-
             Write-Output $Object
         
             if ($ConnectionType -eq 'custom')
